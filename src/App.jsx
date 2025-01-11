@@ -1,35 +1,67 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import "./App.css";
+import HandleSearch from "./components/Search";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [words, setWords] = useState([]);
+
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  // Call to JSON file
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/services/mar_mol_dict.json"); // Asegúrate de que el archivo esté servido correctamente.
+        if (!response.ok) {
+          throw new Error("Error al cargar el archivo JSON");
+        }
+        const data = await response.json();
+
+        const cleanedData = data.map((eachWord, i) => {
+          return {
+            index: i,
+            name: eachWord.name,
+            desc: eachWord.descriptions,
+          };
+        });
+
+        setWords(cleanedData);
+      } catch (error) {
+        console.error("Error fetching data: " + error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Manejar el cambio en la consulta de búsqueda
+  const handleInputChange = (value) => {
+    setQuery(value);
+  };
+
+  const handleSearch = () => {
+    // Filtrar palabras que coincidan con la consulta
+    const filteredWords = words.filter((word) =>
+      word.name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    setResults(filteredWords); // Actualizar los resultados
+    setHasSearched(true);
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <h1>Diccionario Maria Moliner</h1>
+      <HandleSearch
+        query={query}
+        results={results}
+        hasSearched={hasSearched}
+        handleInputChange={handleInputChange}
+        handleSearch={handleSearch}
+      />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
